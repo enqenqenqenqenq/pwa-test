@@ -1,4 +1,4 @@
-const CACHE = 'sb-test-v1';
+const CACHE = 'sb-test-v2';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -14,6 +14,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).pathname.endsWith('/ping.txt')) return; // проверка сети идёт мимо кэша
   e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request)));
 });
 

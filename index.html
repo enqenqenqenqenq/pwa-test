@@ -51,7 +51,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-$('ver').textContent = 'v1';
+$('ver').textContent = 'v2';
 
 // 1. Установка
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -66,8 +66,17 @@ $('install').onclick = async () => { if (deferred) { deferred.prompt(); await de
 addEventListener('appinstalled', () => { $('mode').innerHTML = '<span class="ok">Установлено</span>'; });
 
 // 2. Сеть и service worker
-function net() { $('net').innerHTML = navigator.onLine ? '<span class="ok">Интернет есть</span>' : '<span class="bad">Интернета нет</span>'; }
-addEventListener('online', net); addEventListener('offline', net); net();
+// navigator.onLine на телефонах часто врёт, поэтому дополнительно шлём настоящий запрос
+async function net() {
+  let up = navigator.onLine;
+  if (up) {
+    try { await fetch('./ping.txt?' + Date.now(), { cache: 'no-store' }); } catch (e) { up = false; }
+  }
+  $('net').innerHTML = up ? '<span class="ok">Интернет есть</span>' : '<span class="bad">Интернета нет</span>';
+}
+addEventListener('online', net); addEventListener('offline', net);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) net(); });
+setInterval(net, 4000); net();
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready)
     .then(() => { $('sw').innerHTML = '<span class="ok">Service worker работает, страница сохранена для офлайна</span>'; })
